@@ -25,6 +25,7 @@
 #include "Zend/zend_exceptions.h"
 #include "php_ddastrace.h"
 #include "span.h"
+#include "inttypes.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(ddastrace);
 
@@ -113,6 +114,22 @@ static int _validate_frame(zend_execute_data *execute_data)
 	return 1;
 }
 
+static void _print_span_info(char *action, ddastrace_span_stack_t *span)
+{
+	if (span == NULL) {
+		php_printf("%s: NULL span\n", action);
+		return;
+	}
+	php_printf(
+		"%s: #%" PRIu64 "\n\tparent: #%" PRIu64 "\n\tstart: %" PRIu64 "\n\tduration: %" PRIu64 "\n\n",
+		action,
+		span->span_id,
+		span->parent_id,
+		span->start,
+		span->duration
+	);
+}
+
 /* {{{ arginfo
  */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_open, 0, 0, 0)
@@ -139,8 +156,9 @@ static PHP_FUNCTION(ddastrace_span_open) {
 	if (_validate_frame(execute_data) == 0) {
 		return;
 	}
-	// TODO Start the timer
+	ddastrace_span_stack_t *span = ddastrace_open_span();
 	php_printf("Called: ddastrace_span_open()\n");
+	_print_span_info("Opened span", span);
 }
 
 static PHP_FUNCTION(ddastrace_span_close_void) {
@@ -148,8 +166,9 @@ static PHP_FUNCTION(ddastrace_span_close_void) {
 	if (_validate_frame(execute_data) == 0) {
 		return;
 	}
-	// TODO Stop the timer
+	ddastrace_span_stack_t *span = ddastrace_close_span();
 	php_printf("Called: ddastrace_span_close_void()\n");
+	_print_span_info("Closed span", span);
 }
 
 static PHP_FUNCTION(ddastrace_span_close) {

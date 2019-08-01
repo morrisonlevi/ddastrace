@@ -51,14 +51,15 @@ ddastrace_span_stack_t *ddastrace_open_span() {
 	return stack;
 }
 
-void ddastrace_close_span() {
+ddastrace_span_stack_t *ddastrace_close_span() {
 	ddastrace_span_stack_t *stack = DDASTRACE_G(open_spans_top);
 	if (stack == NULL) {
-		return;
+		return NULL;
 	}
 	DDASTRACE_G(open_spans_top) = stack->next;
 
 	stack->duration = _get_nanoseconds() - stack->start;
 	stack->next = DDASTRACE_G(closed_spans_top);
 	DDASTRACE_G(closed_spans_top) = stack;
+	return stack;
 }

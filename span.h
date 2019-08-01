@@ -13,6 +13,6 @@ typedef struct _ddastrace_span_stack_t {
 void ddastrace_init_span_stacks();
 void ddastrace_free_span_stacks();
 ddastrace_span_stack_t *ddastrace_open_span();
-void ddastrace_close_span();
+ddastrace_span_stack_t *ddastrace_close_span();
 
 #endif	/* DDASTRACE_SPAN_H */
