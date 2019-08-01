@@ -15,7 +15,8 @@ void ddastrace_init_span_stacks() {
 
 static void _free_span_stack(ddastrace_span_stack_t *stack) {
 	while (stack != NULL) {
-		ddastrace_span_stack_t *tmp = stack->next;
+		ddastrace_span_stack_t *tmp = stack;
+		stack = stack->next;
 		efree(tmp);
 	}
 }
