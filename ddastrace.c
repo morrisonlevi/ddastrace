@@ -212,7 +212,7 @@ static const zend_function_entry ddastrace_functions[] = {
 	PHP_FE(ddastrace_span_open, arginfo_ddastrace_span_open)
 	PHP_FE(ddastrace_span_close_void, arginfo_ddastrace_span_close_void)
 	PHP_FE(ddastrace_span_close, arginfo_ddastrace_span_close)
-    PHP_FE(ddastrace_span_close_by_ref, arginfo_ddastrace_span_close_by_ref)
+	PHP_FE(ddastrace_span_close_by_ref, arginfo_ddastrace_span_close_by_ref)
 	PHP_FE(ddastrace_span_close_exception, arginfo_ddastrace_span_close_exception)
 	PHP_FE_END
 };
