@@ -31,6 +31,26 @@
 	ZEND_PARSE_PARAMETERS_END()
 #endif
 
+static void (*_prev_ast_process)(zend_ast *ast);
+static void _ddastrace_ast_process(zend_ast *ast)
+{
+	if (_prev_ast_process) {
+		_prev_ast_process(ast);
+	}
+}
+
+static PHP_MINIT_FUNCTION(ddastrace)
+{
+	_prev_ast_process = zend_ast_process;
+	zend_ast_process = _ddastrace_ast_process;
+	return SUCCESS;
+}
+
+static PHP_MSHUTDOWN_FUNCTION(ddastrace)
+{
+	zend_ast_process = _prev_ast_process;
+	return SUCCESS;
+}
 /* {{{ PHP_RINIT_FUNCTION
  */
 PHP_RINIT_FUNCTION(ddastrace)
@@ -42,6 +62,10 @@ PHP_RINIT_FUNCTION(ddastrace)
 	return SUCCESS;
 }
 /* }}} */
+
+static PHP_RSHUTDOWN_FUNCTION(ddastrace) {
+	return SUCCESS;
+}
 
 /* {{{ PHP_MINFO_FUNCTION
  */
@@ -76,10 +100,10 @@ zend_module_entry ddastrace_module_entry = {
 	STANDARD_MODULE_HEADER,
 	"ddastrace",					/* Extension name */
 	ddastrace_functions,			/* zend_function_entry */
-	NULL,							/* PHP_MINIT - Module initialization */
-	NULL,							/* PHP_MSHUTDOWN - Module shutdown */
+	PHP_MINIT(ddastrace),							/* PHP_MINIT - Module initialization */
+	PHP_MSHUTDOWN(ddastrace),							/* PHP_MSHUTDOWN - Module shutdown */
 	PHP_RINIT(ddastrace),			/* PHP_RINIT - Request initialization */
-	NULL,							/* PHP_RSHUTDOWN - Request shutdown */
+	PHP_RSHUTDOWN(ddastrace),				/* PHP_RSHUTDOWN - Request shutdown */
 	PHP_MINFO(ddastrace),			/* PHP_MINFO - Module info */
 	PHP_DDASTRACE_VERSION,		/* Version */
 	STANDARD_MODULE_PROPERTIES
