@@ -3,5 +3,5 @@ ARG_ENABLE('ddastrace', 'ddastrace support', 'no');
 if (PHP_DDASTRACE != 'no') {
 	AC_DEFINE('HAVE_DDASTRACE', 1, 'ddastrace support enabled');
 
-	EXTENSION('ddastrace', 'ddastrace.c', null, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
+	EXTENSION('ddastrace', 'ddastrace.c' 'process.c', null, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
 }
