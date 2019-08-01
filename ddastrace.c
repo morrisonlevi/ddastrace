@@ -24,6 +24,9 @@
 #include "ext/standard/info.h"
 #include "Zend/zend_exceptions.h"
 #include "php_ddastrace.h"
+#include "span.h"
+
+ZEND_DECLARE_MODULE_GLOBALS(ddastrace);
 
 /* For compatibility with older PHP versions */
 #ifndef ZEND_PARSE_PARAMETERS_NONE
@@ -74,12 +77,13 @@ PHP_RINIT_FUNCTION(ddastrace)
 #if defined(ZTS) && defined(COMPILE_DL_DDASTRACE)
 	ZEND_TSRMLS_CACHE_UPDATE();
 #endif
-
+	ddastrace_init_span_stacks();
 	return SUCCESS;
 }
 /* }}} */
 
 static PHP_RSHUTDOWN_FUNCTION(ddastrace) {
+	ddastrace_free_span_stacks();
 	return SUCCESS;
 }
 
@@ -230,7 +234,11 @@ zend_module_entry ddastrace_module_entry = {
 	PHP_RSHUTDOWN(ddastrace),				/* PHP_RSHUTDOWN - Request shutdown */
 	PHP_MINFO(ddastrace),			/* PHP_MINFO - Module info */
 	PHP_DDASTRACE_VERSION,		/* Version */
-	STANDARD_MODULE_PROPERTIES
+	PHP_MODULE_GLOBALS(ddastrace),
+	NULL, /* PHP_GINIT(ddastrace), */
+	NULL, /* PHP_GSHUTDOWN(ddastrace), */
+	NULL, /* PRSHUTDOWN() */
+	STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
 

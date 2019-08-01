@@ -90,5 +90,5 @@ if test "$PHP_DDASTRACE" != "no"; then
   dnl In case of no dependencies
   AC_DEFINE(HAVE_DDASTRACE, 1, [ Have ddastrace support ])
 
-  PHP_NEW_EXTENSION(ddastrace, ddastrace.c, $ext_shared)
+  PHP_NEW_EXTENSION(ddastrace, ddastrace.c span.c, $ext_shared)
 fi

@@ -18,11 +18,23 @@
 
 #ifndef PHP_DDASTRACE_H
 # define PHP_DDASTRACE_H
+#include "span.h"
 
 extern zend_module_entry ddastrace_module_entry;
 # define phpext_ddastrace_ptr &ddastrace_module_entry
 
 # define PHP_DDASTRACE_VERSION "0.1.0"
+
+ZEND_BEGIN_MODULE_GLOBALS(ddastrace)
+	ddastrace_span_stack_t *open_spans_top;
+	ddastrace_span_stack_t *closed_spans_top;
+ZEND_END_MODULE_GLOBALS(ddastrace)
+
+#ifdef ZTS
+#define DDASTRACE_G(v) ZEND_MODULE_GLOBALS_ACCESSOR(ddastrace, v)
+#else
+#define DDASTRACE_G(v) (ddastrace_globals.v)
+#endif
 
 # if defined(ZTS) && defined(COMPILE_DL_DDASTRACE)
 ZEND_TSRMLS_CACHE_EXTERN()
