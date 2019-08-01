@@ -22,6 +22,7 @@
 
 #include "php.h"
 #include "ext/standard/info.h"
+#include "Zend/zend_exceptions.h"
 #include "php_ddastrace.h"
 
 /* For compatibility with older PHP versions */
@@ -94,17 +95,96 @@ PHP_MINFO_FUNCTION(ddastrace)
 
 /* {{{ arginfo
  */
-ZEND_BEGIN_ARG_INFO(arginfo_ddastrace_test1, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_open, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO(arginfo_ddastrace_test2, 0)
-	ZEND_ARG_INFO(0, str)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_close_void, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_close, 0, 0, 1)
+ZEND_ARG_INFO(0, retval)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_close_by_ref, 0, 0, 1)
+ZEND_ARG_INFO(1, retval_ref)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_close_exception, 0, 0, 1)
+ZEND_ARG_INFO(0, throwable)
 ZEND_END_ARG_INFO()
 /* }}} */
+
+static PHP_FUNCTION(ddastrace_span_open) {
+	ZEND_PARSE_PARAMETERS_NONE();
+	// TODO Check that we're in a function
+	// TODO Start the timer
+	php_printf("Called: ddastrace_span_open()\n");
+}
+
+static PHP_FUNCTION(ddastrace_span_close_void) {
+	ZEND_PARSE_PARAMETERS_NONE();
+	// TODO Check that we're in a function
+	// TODO Stop the timer
+	php_printf("Called: ddastrace_span_close_void()\n");
+}
+
+static PHP_FUNCTION(ddastrace_span_close) {
+	zval *retval = NULL;
+
+	ZEND_PARSE_PARAMETERS_START_EX(ZEND_PARSE_PARAMS_THROW, 1, 1)
+		Z_PARAM_ZVAL(retval)
+	ZEND_PARSE_PARAMETERS_END();
+
+	// TODO Check that we're in a function
+	// TODO Stop the timer
+	if (Z_TYPE_P(retval) == IS_STRING) {
+		php_printf("Called: ddastrace_span_close(): %s\n", Z_STRVAL_P(retval));
+	} else {
+		php_printf("Called: ddastrace_span_close()\n");
+	}
+}
+
+static PHP_FUNCTION(ddastrace_span_close_by_ref) {
+	zval *retval = NULL;
+
+	ZEND_PARSE_PARAMETERS_START_EX(ZEND_PARSE_PARAMS_THROW, 1, 1)
+		Z_PARAM_ZVAL(retval)
+	ZEND_PARSE_PARAMETERS_END();
+
+	if (!Z_ISREF_P(retval)) {
+		zend_throw_exception_ex(zend_ce_type_error, 0, "Return value must be passed by reference");
+		return;
+	}
+
+	// TODO Check that we're in a function
+	// TODO Stop the timer
+	php_printf("Called: ddastrace_span_close_by_ref()\n");
+
+	RETURN_ZVAL(retval, 0, 0);
+}
+
+static PHP_FUNCTION(ddastrace_span_close_exception) {
+	zval *exception = NULL;
+
+	ZEND_PARSE_PARAMETERS_START_EX(ZEND_PARSE_PARAMS_THROW, 1, 1)
+		Z_PARAM_OBJECT_OF_CLASS(exception, zend_ce_throwable)
+	ZEND_PARSE_PARAMETERS_END();
+
+	// TODO Check that we're in a function
+	// TODO Stop the timer
+	php_printf("Called: ddastrace_span_close_exception()\n");
+
+	RETURN_ZVAL(exception, 0, 0);
+}
 
 /* {{{ ddastrace_functions[]
  */
 static const zend_function_entry ddastrace_functions[] = {
+	PHP_FE(ddastrace_span_open, arginfo_ddastrace_span_open)
+	PHP_FE(ddastrace_span_close_void, arginfo_ddastrace_span_close_void)
+	PHP_FE(ddastrace_span_close, arginfo_ddastrace_span_close)
+    PHP_FE(ddastrace_span_close_by_ref, arginfo_ddastrace_span_close_by_ref)
+	PHP_FE(ddastrace_span_close_exception, arginfo_ddastrace_span_close_exception)
 	PHP_FE_END
 };
 /* }}} */
