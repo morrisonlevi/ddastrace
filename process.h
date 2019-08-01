@@ -3,7 +3,7 @@
 
 #include "php.h"
 
-void (*ddastrace_prev_ast_process)(zend_ast *ast);
+extern void (*ddastrace_prev_ast_process)(zend_ast *ast);
 ZEND_API void ddastrace_ast_process(zend_ast *ast);
 
 #endif

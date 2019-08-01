@@ -1,5 +1,7 @@
 #include "process.h"
 
+void (*ddastrace_prev_ast_process)(zend_ast *ast);
+
 #define zend_ast_alloc(size) zend_arena_alloc(&CG(ast_arena), size);
 
 static inline size_t zend_ast_list_size(uint32_t children) {
