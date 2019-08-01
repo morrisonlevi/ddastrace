@@ -39,7 +39,6 @@ ddastrace_span_stack_t *ddastrace_open_span() {
 	stack->next = DDASTRACE_G(open_spans_top);
 	DDASTRACE_G(open_spans_top) = stack;
 
-	// We need to peek at the active span ID before we push a new one onto the stack
 	if (stack->next) {
 		stack->parent_id = stack->next->span_id;
 	} else {
