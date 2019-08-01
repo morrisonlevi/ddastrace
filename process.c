@@ -28,10 +28,6 @@ static zend_ast *_create_ast_str(char *str, size_t len, uint32_t attr) {
 	return ast;
 }
 
-static zend_ast *_create_ast_var(char *str, size_t len) {
-	return zend_ast_create(ZEND_AST_VAR, _create_ast_str(str, len, 0));
-}
-
 static zend_ast *_create_ast_catch_name() {
 	zend_ast *name = _create_ast_str("Throwable", sizeof("Throwable") - 1, ZEND_NAME_FQ);
 #if PHP_VERSION_ID < 70100
@@ -41,7 +37,7 @@ static zend_ast *_create_ast_catch_name() {
 #endif
 }
 static zend_ast *_create_ast_catch(void) {
-	zend_ast *catch_var_name = _create_ast_var("ex", sizeof("ex") - 1);
+	zend_ast *catch_var_name = _create_ast_str("ex", sizeof("ex") - 1, 0);
 	zend_ast *catch_type_name = _create_ast_catch_name();
 	zend_ast *catch_stmt_list = zend_ast_create_list(0, ZEND_AST_STMT_LIST);
 
