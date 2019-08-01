@@ -6,7 +6,10 @@ if (!extension_loaded('ddastrace')) echo 'skip: ddastrace required';
 ?>
 --FILE--
 <?php
-ddastrace_span_close_void();
+function foo() {
+    ddastrace_span_close_void();
+}
+foo();
 ?>
 --EXPECT--
 Called: ddastrace_span_close_void()

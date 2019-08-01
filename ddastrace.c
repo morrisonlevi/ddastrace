@@ -93,6 +93,22 @@ PHP_MINFO_FUNCTION(ddastrace)
 }
 /* }}} */
 
+static int _validate_frame(zend_execute_data *execute_data)
+{
+	zend_execute_data *ex = EX(prev_execute_data);
+	if (ZEND_CALL_INFO(ex) & ZEND_CALL_CODE) {
+		zend_throw_exception_ex(
+			zend_ce_error, 0, "%s() called without function context",
+			ZSTR_VAL(EX(func)->common.function_name)
+		);
+		return 0;
+	}
+	if (zend_forbid_dynamic_call(ZSTR_VAL(EX(func)->common.function_name)) == FAILURE) {
+		return 0;
+	}
+	return 1;
+}
+
 /* {{{ arginfo
  */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_open, 0, 0, 0)
@@ -116,14 +132,18 @@ ZEND_END_ARG_INFO()
 
 static PHP_FUNCTION(ddastrace_span_open) {
 	ZEND_PARSE_PARAMETERS_NONE();
-	// TODO Check that we're in a function
+	if (_validate_frame(execute_data) == 0) {
+		return;
+	}
 	// TODO Start the timer
 	php_printf("Called: ddastrace_span_open()\n");
 }
 
 static PHP_FUNCTION(ddastrace_span_close_void) {
 	ZEND_PARSE_PARAMETERS_NONE();
-	// TODO Check that we're in a function
+	if (_validate_frame(execute_data) == 0) {
+		return;
+	}
 	// TODO Stop the timer
 	php_printf("Called: ddastrace_span_close_void()\n");
 }
@@ -131,11 +151,14 @@ static PHP_FUNCTION(ddastrace_span_close_void) {
 static PHP_FUNCTION(ddastrace_span_close) {
 	zval *retval = NULL;
 
+	if (_validate_frame(execute_data) == 0) {
+		return;
+	}
+
 	ZEND_PARSE_PARAMETERS_START_EX(ZEND_PARSE_PARAMS_THROW, 1, 1)
 		Z_PARAM_ZVAL(retval)
 	ZEND_PARSE_PARAMETERS_END();
 
-	// TODO Check that we're in a function
 	// TODO Stop the timer
 	if (Z_TYPE_P(retval) == IS_STRING) {
 		php_printf("Called: ddastrace_span_close(): %s\n", Z_STRVAL_P(retval));
@@ -147,6 +170,10 @@ static PHP_FUNCTION(ddastrace_span_close) {
 static PHP_FUNCTION(ddastrace_span_close_by_ref) {
 	zval *retval = NULL;
 
+	if (_validate_frame(execute_data) == 0) {
+		return;
+	}
+
 	ZEND_PARSE_PARAMETERS_START_EX(ZEND_PARSE_PARAMS_THROW, 1, 1)
 		Z_PARAM_ZVAL(retval)
 	ZEND_PARSE_PARAMETERS_END();
@@ -156,7 +183,6 @@ static PHP_FUNCTION(ddastrace_span_close_by_ref) {
 		return;
 	}
 
-	// TODO Check that we're in a function
 	// TODO Stop the timer
 	php_printf("Called: ddastrace_span_close_by_ref()\n");
 
@@ -166,11 +192,14 @@ static PHP_FUNCTION(ddastrace_span_close_by_ref) {
 static PHP_FUNCTION(ddastrace_span_close_exception) {
 	zval *exception = NULL;
 
+	if (_validate_frame(execute_data) == 0) {
+		return;
+	}
+
 	ZEND_PARSE_PARAMETERS_START_EX(ZEND_PARSE_PARAMS_THROW, 1, 1)
 		Z_PARAM_OBJECT_OF_CLASS(exception, zend_ce_throwable)
 	ZEND_PARSE_PARAMETERS_END();
 
-	// TODO Check that we're in a function
 	// TODO Stop the timer
 	php_printf("Called: ddastrace_span_close_exception()\n");
 

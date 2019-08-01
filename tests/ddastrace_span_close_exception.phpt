@@ -6,9 +6,12 @@ if (!extension_loaded('ddastrace')) echo 'skip: ddastrace required';
 ?>
 --FILE--
 <?php
-$exception = new Exception('Oops!');
-$result = ddastrace_span_close_exception($exception);
-var_dump($result->getMessage());
+function foo() {
+    $exception = new Exception('Oops!');
+    $result = ddastrace_span_close_exception($exception);
+    var_dump($result->getMessage());
+}
+foo();
 ?>
 --EXPECT--
 Called: ddastrace_span_close_exception()

@@ -6,9 +6,12 @@ if (!extension_loaded('ddastrace')) echo 'skip: ddastrace required';
 ?>
 --FILE--
 <?php
-$retval = 'foo';
-ddastrace_span_close($retval);
-ddastrace_span_close(42);
+function foo() {
+    $retval = 'foo';
+    ddastrace_span_close($retval);
+    ddastrace_span_close(42);
+}
+foo();
 ?>
 --EXPECT--
 Called: ddastrace_span_close(): foo
