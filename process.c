@@ -39,7 +39,16 @@ static zend_ast *_create_ast_catch_name() {
 static zend_ast *_create_ast_catch(void) {
 	zend_ast *catch_var_name = _create_ast_str("ex", sizeof("ex") - 1, 0);
 	zend_ast *catch_type_name = _create_ast_catch_name();
-	zend_ast *catch_stmt_list = zend_ast_create_list(0, ZEND_AST_STMT_LIST);
+
+	zend_ast *span_close_exception = zend_ast_create(ZEND_AST_CALL,
+		_create_ast_str("ddastrace_span_close_exception", sizeof("ddastrace_span_close_exception") - 1, ZEND_NAME_FQ),
+		zend_ast_create_list(1, ZEND_AST_ARG_LIST,
+			zend_ast_create(ZEND_AST_VAR, _create_ast_str("ex", sizeof("ex") - 1, 0))
+		));
+
+	zend_ast *catch_stmt_list = zend_ast_create_list(1, ZEND_AST_STMT_LIST,
+		zend_ast_create(ZEND_AST_THROW, span_close_exception)
+		);
 
 	zend_ast *catch = zend_ast_create_list(1, ZEND_AST_CATCH_LIST,
 			zend_ast_create(ZEND_AST_CATCH, catch_type_name, catch_var_name, catch_stmt_list)
