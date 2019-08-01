@@ -34,6 +34,21 @@
 static void (*_prev_ast_process)(zend_ast *ast);
 static void _ddastrace_ast_process(zend_ast *ast)
 {
+	/* find function and method declarations
+	 * wrap body in (roughly):
+	 *
+	 * ddastrace_span_begin();
+	 * try { ... }
+	 * catch (Throwable $ex) {
+	 *   ddastrace_span_end_exception($ex);
+	 *   throw $ex;
+	 * }
+	 * ddastrace_span_end_void();
+	 *
+	 * Also need to walk the body to find `return` nodes and wrap them in:
+	 * ddastrace_span_end(...) or ddastrace_span_end_by_ref(...)
+	 * Be careful not to go into other functions such as closures and methods in an anonymous class!
+	 */
 	if (_prev_ast_process) {
 		_prev_ast_process(ast);
 	}
