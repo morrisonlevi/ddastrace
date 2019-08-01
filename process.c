@@ -30,23 +30,46 @@ static zend_ast *_create_ast_var(char *str, size_t len) {
 	return zend_ast_create(ZEND_AST_VAR, _create_ast_str(str, len, 0));
 }
 
+static zend_ast *_create_ast_catch_name() {
+	zend_ast *name = _create_ast_str("Throwable", sizeof("Throwable") - 1, ZEND_NAME_FQ);
+#if PHP_VERSION_ID < 70100
+	return name;
+#else
+	return zend_ast_create_list(1, ZEND_AST_NAME_LIST, name);
+#endif
+}
+static zend_ast *_create_ast_catch(void) {
+	zend_ast *catch_var_name = _create_ast_var("ex", sizeof("ex") - 1);
+	zend_ast *catch_type_name = _create_ast_catch_name();
+	zend_ast *catch_stmt_list = zend_ast_create_list(0, ZEND_AST_STMT_LIST);
+
+	zend_ast *catch = zend_ast_create_list(1, ZEND_AST_CATCH_LIST,
+			zend_ast_create(ZEND_AST_CATCH, catch_type_name, catch_var_name, catch_stmt_list)
+			);
+	return catch;
+}
+
 static void _process_function(zend_ast *ast) {
 	zend_ast_decl *decl = (zend_ast_decl *) ast;
 
 	zend_ast *span_open = zend_ast_create(ZEND_AST_CALL,
-		_create_ast_str("ddastrace_span_open", sizeof("ddastrace_span_open") - 1, ZEND_NAME_FQ), 
+		_create_ast_str("ddastrace_span_open", sizeof("ddastrace_span_open") - 1, ZEND_NAME_FQ),
 		zend_ast_create_list(0, ZEND_AST_ARG_LIST));
 
 	zend_ast *span_close = zend_ast_create(ZEND_AST_CALL,
 		_create_ast_str("ddastrace_span_close_void", sizeof("ddastrace_span_close_void") - 1, ZEND_NAME_FQ),
 		zend_ast_create_list(0, ZEND_AST_ARG_LIST));
 
+	zend_ast *catch = _create_ast_catch();
+	zend_ast *finally = NULL;
+	zend_ast *try = zend_ast_create(ZEND_AST_TRY, decl->child[2], catch, finally);
+
 	zend_ast_list *new_list = zend_ast_alloc(zend_ast_list_size(3));
 	new_list->kind = ZEND_AST_STMT_LIST;
 	new_list->lineno = 0;
 	new_list->children = 3;
 	new_list->child[0] = span_open;
-	new_list->child[1] = decl->child[2];
+	new_list->child[1] = try;
 	new_list->child[2] = span_close;
 
 	decl->child[2] = (zend_ast *) new_list;
