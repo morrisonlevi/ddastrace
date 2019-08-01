@@ -17,27 +17,28 @@ static void _process_list(zend_ast *ast) {
 	}
 }
 
-// pls pass fully qualified name, no leading slash
-static zend_ast *_create_call(zend_string *name, zend_ast *args) {
+static zend_ast *_create_ast_str(char *str, size_t len, uint32_t attr) {
 	zval zv;
-	ZVAL_STR(&zv, name);
-	zend_ast *name_ast = zend_ast_create_zval_with_lineno(&zv, 0);
-	name_ast->attr = ZEND_NAME_FQ;
+	zend_ast *ast;
+	ZVAL_NEW_STR(&zv, zend_string_init(str, len, 0));
+	ast = zend_ast_create_zval_with_lineno(&zv, 0);
+	ast->attr = attr;
+	return ast;
+}
 
-	return zend_ast_create(ZEND_AST_CALL, name_ast, args);
+static zend_ast *_create_ast_var(char *str, size_t len) {
+	return zend_ast_create(ZEND_AST_VAR, _create_ast_str(str, len, 0));
 }
 
 static void _process_function(zend_ast *ast) {
 	zend_ast_decl *decl = (zend_ast_decl *) ast;
 
-	zend_string *ddastrace_span_open = zend_string_init("ddastrace_span_open", sizeof("ddastrace_span_open") - 1, 0);
-	zend_ast *span_open = _create_call(
-		ddastrace_span_open,
+	zend_ast *span_open = zend_ast_create(ZEND_AST_CALL,
+		_create_ast_str("ddastrace_span_open", sizeof("ddastrace_span_open") - 1, ZEND_NAME_FQ), 
 		zend_ast_create_list(0, ZEND_AST_ARG_LIST));
 
-	zend_string *ddastrace_span_close_void = zend_string_init("ddastrace_span_close_void", sizeof("ddastrace_span_close_void") - 1, 0);
-	zend_ast *span_close = _create_call(
-		ddastrace_span_close_void,
+	zend_ast *span_close = zend_ast_create(ZEND_AST_CALL,
+		_create_ast_str("ddastrace_span_close_void", sizeof("ddastrace_span_close_void") - 1, ZEND_NAME_FQ),
 		zend_ast_create_list(0, ZEND_AST_ARG_LIST));
 
 	zend_ast_list *new_list = zend_ast_alloc(zend_ast_list_size(3));
