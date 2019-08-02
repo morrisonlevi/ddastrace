@@ -4,6 +4,8 @@ void (*ddastrace_prev_ast_process)(zend_ast *ast);
 
 #define zend_ast_alloc(size) zend_arena_alloc(&CG(ast_arena), size);
 
+// todo: compiler globals for being in a function?
+
 static inline size_t zend_ast_list_size(uint32_t children) {
 	return sizeof(zend_ast_list) - sizeof(zend_ast *) + sizeof(zend_ast *) * children;
 }
@@ -91,20 +93,58 @@ static void _process_function(zend_ast *ast) {
 	try->lineno = start_lineno;
 	new_list->lineno = start_lineno;
 
+	// recurse into function body
+	_process_list(decl->child[2]);
+
 	decl->child[2] = (zend_ast *) new_list;
 
 }
 
-static void _process_class(zend_ast *ast) {
-	zend_ast_decl *decl = (zend_ast_decl *) ast;
-	if (decl->flags & (ZEND_ACC_INTERFACE | ZEND_ACC_TRAIT)) {
-		// I don't know what to do with trait methods :/
-		// Interfaces can't have bodies, so skip ast manipulation
-		return;
-	}
-}
+static zend_ast *_process_return(zend_ast *ast) {
+	zend_ast *expr_ast = ast->child[0];
+	zend_bool by_ref = (CG(active_op_array)->fn_flags & ZEND_ACC_RETURN_REFERENCE) != 0;
+	zend_ast *return_ast = ast;
 
-static void _process_return(zend_ast *ast) {}
+	// if there isn't an active function then don't wrap it
+	// e.g. return at file scope
+	if (!CG(active_op_array)->function_name) {
+		return return_ast;
+	}
+
+	if (expr_ast) {
+		/* Either:
+		 *   return ddastrace_span_close_by_ref(expr_ast);
+		 *   return ddastrace_span_close(expr_ast);
+		 */
+		zend_ast *call;
+		char *name;
+		size_t len;
+
+		if (by_ref) {
+			name = "ddastrace_span_close_by_ref";
+			len = sizeof("ddastrace_span_close_by_ref") - 1;
+		} else {
+			name = "ddastrace_span_close";
+			len = sizeof("ddastrace_span_close") - 1;
+		}
+
+		call = zend_ast_create(ZEND_AST_CALL,
+			_create_ast_str(name, len, ZEND_NAME_FQ),
+			zend_ast_create_list(1, ZEND_AST_ARG_LIST, ast->child[0]));
+
+		ast->child[0] = call;
+
+		// todo: recurse on the expr_ast
+	} else {
+		// { ddastrace_span_end_void(); return; }
+		zend_ast *call = zend_ast_create(ZEND_AST_CALL,
+			_create_ast_str("ddastrace_span_end_void", sizeof("ddastrace_span_end_void") - 1, ZEND_NAME_FQ),
+			zend_ast_create_list(0, ZEND_AST_ARG_LIST));
+		zend_ast *list = zend_ast_create_list(2, ZEND_AST_STMT_LIST, call, ast);
+		return_ast = list;
+	}
+	return return_ast;
+}
 
 static void _process_stmt(zend_ast *ast) {
 	if (!ast) {
@@ -121,12 +161,14 @@ static void _process_stmt(zend_ast *ast) {
 			_process_function(ast);
 			break;
 
+#if 0
 		case ZEND_AST_CLASS:
 			_process_class(ast);
 			break;
+#endif
 
 		case ZEND_AST_RETURN:
-			_process_return(ast);
+			ast = _process_return(ast);
 			break;
 
 	}
