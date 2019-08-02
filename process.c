@@ -10,16 +10,7 @@ static inline size_t zend_ast_list_size(uint32_t children) {
 	return sizeof(zend_ast_list) - sizeof(zend_ast *) + sizeof(zend_ast *) * children;
 }
 
-static void _process_stmt(zend_ast *ast);
-
-static void _process_list(zend_ast *ast) {
-	zend_ast_list *list = zend_ast_get_list(ast);
-	zend_ast **begin, **end = &list->child[list->children];
-
-	for (begin = list->child; begin != end; ++begin) {
-		_process_stmt(*begin);
-	}
-}
+static zend_ast *_process_ast(zend_ast *ast);
 
 static zend_ast *_create_ast_str(char *str, size_t len, uint32_t attr) {
 	zval zv;
@@ -63,7 +54,7 @@ static zend_ast *_create_ast_catch(uint32_t lineno) {
 	return (zend_ast *) catch;
 }
 
-static void _process_function(zend_ast *ast) {
+static zend_ast *_process_function(zend_ast *ast) {
 	zend_ast_decl *decl = (zend_ast_decl *) ast;
 	zend_ast_list *stmt_list = zend_ast_get_list(decl->child[2]);
 
@@ -81,7 +72,7 @@ static void _process_function(zend_ast *ast) {
 
 	zend_ast *catch = _create_ast_catch(stop_lineno);
 	zend_ast *finally = NULL;
-	zend_ast *try = zend_ast_create(ZEND_AST_TRY, decl->child[2], catch, finally);
+	zend_ast *try = zend_ast_create(ZEND_AST_TRY, _process_ast(decl->child[2]), catch, finally);
 	zend_ast_list *new_list = zend_ast_alloc(zend_ast_list_size(3));
 	new_list->kind = ZEND_AST_STMT_LIST;
 	new_list->lineno = 0;
@@ -93,23 +84,26 @@ static void _process_function(zend_ast *ast) {
 	try->lineno = start_lineno;
 	new_list->lineno = start_lineno;
 
-	// recurse into function body
-	_process_list(decl->child[2]);
-
 	decl->child[2] = (zend_ast *) new_list;
 
+	return ast;
 }
 
 static zend_ast *_process_return(zend_ast *ast) {
 	zend_ast *expr_ast = ast->child[0];
-	zend_bool by_ref = (CG(active_op_array)->fn_flags & ZEND_ACC_RETURN_REFERENCE) != 0;
 	zend_ast *return_ast = ast;
+	zend_bool by_ref = 0;
+
+#if 0
+	// todo: add active_op_array as we traverse
+	zend_bool by_ref = (CG(active_op_array)->fn_flags & ZEND_ACC_RETURN_REFERENCE) != 0;
 
 	// if there isn't an active function then don't wrap it
 	// e.g. return at file scope
 	if (!CG(active_op_array)->function_name) {
 		return return_ast;
 	}
+#endif
 
 	if (expr_ast) {
 		/* Either:
@@ -146,32 +140,36 @@ static zend_ast *_process_return(zend_ast *ast) {
 	return return_ast;
 }
 
-static void _process_stmt(zend_ast *ast) {
-	if (!ast) {
-		return;
+// inspired by zend_ast_copy
+static zend_ast *_process_ast(zend_ast *ast) {
+	if (ast->kind == ZEND_AST_ZVAL || ast->kind == ZEND_AST_CONSTANT) {
+	} else if (zend_ast_is_list(ast)) {
+		zend_ast_list *list = zend_ast_get_list(ast);
+		uint32_t i;
+		// todo: process list itself somehow?
+		for (i = 0; i < list->children; i++) {
+			if (list->child[i]) {
+				list->child[i] = _process_ast(list->child[i]);
+			}
+		}
+	} else {
+		uint32_t i, children = zend_ast_get_num_children(ast);
+
+		switch (ast->kind) {
+			case ZEND_AST_FUNC_DECL:
+			case ZEND_AST_METHOD:
+				return _process_function(ast);
+
+			case ZEND_AST_RETURN:
+				return _process_return(ast);
+		}
+		for (i = 0; i < children; i++) {
+			if (ast->child[i]) {
+				ast->child[i] = _process_ast(ast->child[i]);
+			}
+		}
 	}
-
-	switch (ast->kind) {
-		case ZEND_AST_STMT_LIST:
-			_process_list(ast);
-			break;
-
-		case ZEND_AST_FUNC_DECL:
-		case ZEND_AST_METHOD:
-			_process_function(ast);
-			break;
-
-#if 0
-		case ZEND_AST_CLASS:
-			_process_class(ast);
-			break;
-#endif
-
-		case ZEND_AST_RETURN:
-			ast = _process_return(ast);
-			break;
-
-	}
+	return ast;
 }
 
 ZEND_API void ddastrace_ast_process(zend_ast *ast) {
@@ -192,7 +190,7 @@ ZEND_API void ddastrace_ast_process(zend_ast *ast) {
 	 * Be careful not to go into other functions such as closures and
 	 * methods in an anonymous class!
 	 */
-	_process_stmt(ast);
+	ast = _process_ast(ast);
 
 	if (ddastrace_prev_ast_process) {
 		ddastrace_prev_ast_process(ast);
