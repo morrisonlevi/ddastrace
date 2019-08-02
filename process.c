@@ -184,8 +184,6 @@ ZEND_API void ddastrace_ast_process(zend_ast *ast) {
 	 * Also need to walk the body to find `return` nodes and wrap them:
 	 *      ddastrace_span_close(...)
 	 *   or ddastrace_span_close_by_ref(...)
-	 * Be careful not to go into other functions such as closures and
-	 * methods in an anonymous class!
 	 */
 	ast = _process_ast(ast);
 
