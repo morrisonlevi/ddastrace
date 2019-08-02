@@ -7,13 +7,13 @@ if (!extension_loaded('ddastrace')) echo 'skip: ddastrace required';
 --FILE--
 <?php
 $test = ['foo'];
-$foo = function &() use (&$test) {
+function &foo(array &$test) {
     $test[] = 'bar';
     debug_zval_dump($test);
     return $test;
 };
 debug_zval_dump($test);
-$result = $foo($test);
+$result = foo($test);
 debug_zval_dump($result);
 var_dump($test === $result);
 ?>
