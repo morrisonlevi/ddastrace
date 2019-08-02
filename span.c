@@ -29,7 +29,7 @@ void ddastrace_free_span_stacks() {
 static uint64_t _get_nanoseconds() {
 	struct timespec time;
 	if (clock_gettime(CLOCK_MONOTONIC, &time) == 0) {
-		return time.tv_sec * 1000000 + time.tv_nsec / 1000;
+		return time.tv_sec * 1000000000L + time.tv_nsec;
 	}
 	return 0;
 }
