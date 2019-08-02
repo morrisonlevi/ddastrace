@@ -48,9 +48,8 @@ static zend_ast *_create_ast_catch(uint32_t lineno) {
 
 	catch->lineno = lineno;
 	throw->lineno = lineno;
-
-	// setting this lineno avoids a segfault on uncaught exceptions
 	stmt_list->lineno = lineno;
+
 	return (zend_ast *) catch;
 }
 
