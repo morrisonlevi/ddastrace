@@ -143,7 +143,7 @@ static zend_ast *_process_return(zend_ast *ast) {
 	} else {
 		// { ddastrace_span_end_void(); return; }
 		zend_ast *call = zend_ast_create(ZEND_AST_CALL,
-			_create_ast_str("ddastrace_span_end_void", sizeof("ddastrace_span_end_void") - 1, ZEND_NAME_FQ),
+			_create_ast_str("ddastrace_span_close_void", sizeof("ddastrace_span_close_void") - 1, ZEND_NAME_FQ),
 			zend_ast_create_list(0, ZEND_AST_ARG_LIST));
 		return zend_ast_create_list(2, ZEND_AST_STMT_LIST, call, ast);
 	}
