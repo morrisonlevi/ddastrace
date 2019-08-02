@@ -6,11 +6,15 @@ if (!extension_loaded('ddastrace')) echo 'skip: ddastrace required';
 ?>
 --FILE--
 <?php
-function foo() {
+function foo(): string {
     echo "Foo!\n";
     return "retfoo\n";
 }
-echo foo();
+try {
+    echo foo();
+} catch (Throwable $ex) {
+    echo "Oops :( ", get_class($ex), "\n";
+}
 ?>
 --EXPECTF--
 Called: ddastrace_span_open()
@@ -19,8 +23,11 @@ Opened span: #%d
 	start: %d (duration: 0)
 
 Foo!
-retfoo
 Called: ddastrace_span_close(): retfoo
-Closed span (void): #%d
+
+Closed span: #%d
 	parent: #0
 	start: %d (duration: %d)
+
+retfoo
+
