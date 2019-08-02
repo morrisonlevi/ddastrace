@@ -6,11 +6,16 @@
 #include "stdint.h"
 #include "php_ddastrace.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(ddastrace);
+#if defined(ZTS) && defined(COMPILE_DL_DDASTRACE)
+	ZEND_TSRMLS_CACHE_DEFINE()
+#endif
+
+ZEND_TLS ddastrace_span_stack_t *open_spans_top;
+ZEND_TLS ddastrace_span_stack_t *closed_spans_top;
 
 void ddastrace_init_span_stacks() {
-	DDASTRACE_G(open_spans_top) = NULL;
-	DDASTRACE_G(closed_spans_top) = NULL;
+	open_spans_top = NULL;
+	closed_spans_top = NULL;
 }
 
 static void _free_span_stack(ddastrace_span_stack_t *stack) {
@@ -22,8 +27,8 @@ static void _free_span_stack(ddastrace_span_stack_t *stack) {
 }
 
 void ddastrace_free_span_stacks() {
-	_free_span_stack(DDASTRACE_G(open_spans_top));
-	_free_span_stack(DDASTRACE_G(closed_spans_top));
+	_free_span_stack(open_spans_top);
+	_free_span_stack(closed_spans_top);
 }
 
 static uint64_t _get_nanoseconds() {
@@ -36,8 +41,8 @@ static uint64_t _get_nanoseconds() {
 
 ddastrace_span_stack_t *ddastrace_open_span() {
 	ddastrace_span_stack_t *stack = ecalloc(1, sizeof(ddastrace_span_stack_t));
-	stack->next = DDASTRACE_G(open_spans_top);
-	DDASTRACE_G(open_spans_top) = stack;
+	stack->next = open_spans_top;
+	open_spans_top = stack;
 
 	if (stack->next) {
 		stack->parent_id = stack->next->span_id;
@@ -51,14 +56,14 @@ ddastrace_span_stack_t *ddastrace_open_span() {
 }
 
 ddastrace_span_stack_t *ddastrace_close_span() {
-	ddastrace_span_stack_t *stack = DDASTRACE_G(open_spans_top);
+	ddastrace_span_stack_t *stack = open_spans_top;
 	if (stack == NULL) {
 		return NULL;
 	}
-	DDASTRACE_G(open_spans_top) = stack->next;
+	open_spans_top = stack->next;
 
 	stack->duration = _get_nanoseconds() - stack->start;
-	stack->next = DDASTRACE_G(closed_spans_top);
-	DDASTRACE_G(closed_spans_top) = stack;
+	stack->next = closed_spans_top;
+	closed_spans_top = stack;
 	return stack;
 }

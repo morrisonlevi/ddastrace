@@ -28,7 +28,9 @@
 #include "span.h"
 #include "inttypes.h"
 
-ZEND_DECLARE_MODULE_GLOBALS(ddastrace);
+#if defined(ZTS) && defined(COMPILE_DL_DDASTRACE)
+	ZEND_TSRMLS_CACHE_DEFINE()
+#endif
 
 /* For compatibility with older PHP versions */
 #ifndef ZEND_PARSE_PARAMETERS_NONE
@@ -236,11 +238,7 @@ zend_module_entry ddastrace_module_entry = {
 	PHP_RSHUTDOWN(ddastrace),				/* PHP_RSHUTDOWN - Request shutdown */
 	PHP_MINFO(ddastrace),			/* PHP_MINFO - Module info */
 	PHP_DDASTRACE_VERSION,		/* Version */
-	PHP_MODULE_GLOBALS(ddastrace),
-	NULL, /* PHP_GINIT(ddastrace), */
-	NULL, /* PHP_GSHUTDOWN(ddastrace), */
-	NULL, /* PRSHUTDOWN() */
-	STANDARD_MODULE_PROPERTIES_EX
+	STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
 
