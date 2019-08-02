@@ -167,6 +167,8 @@ static PHP_FUNCTION(ddastrace_span_close) {
 		php_printf("Called: ddastrace_span_close()\n");
 	}
 	_print_span_info("Closed span", span);
+
+	RETURN_ZVAL(retval, 0, 0);
 }
 
 static PHP_FUNCTION(ddastrace_span_close_by_ref) {
