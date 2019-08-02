@@ -99,7 +99,7 @@ static void _print_span_info(char *action, ddastrace_span_stack_t *span)
 		return;
 	}
 	php_printf(
-		"%s: #%" PRIu64 "\n\tparent: #%" PRIu64 "\n\tstart: %" PRIu64 "\n\tduration: %" PRIu64 "\n\n",
+		"%s: #%" PRIu64 "\n\tparent: #%" PRIu64 "\n\tstart: %" PRIu64 " (duration: %" PRIu64 ")\n\n",
 		action,
 		span->span_id,
 		span->parent_id,
@@ -146,7 +146,7 @@ static PHP_FUNCTION(ddastrace_span_close_void) {
 	}
 	ddastrace_span_stack_t *span = ddastrace_close_span();
 	php_printf("Called: ddastrace_span_close_void()\n");
-	_print_span_info("Closed span", span);
+	_print_span_info("Closed span (void)", span);
 }
 
 static PHP_FUNCTION(ddastrace_span_close) {
@@ -160,12 +160,13 @@ static PHP_FUNCTION(ddastrace_span_close) {
 		Z_PARAM_ZVAL(retval)
 	ZEND_PARSE_PARAMETERS_END();
 
-	// TODO Stop the timer
+	ddastrace_span_stack_t *span = ddastrace_close_span();
 	if (Z_TYPE_P(retval) == IS_STRING) {
 		php_printf("Called: ddastrace_span_close(): %s\n", Z_STRVAL_P(retval));
 	} else {
 		php_printf("Called: ddastrace_span_close()\n");
 	}
+	_print_span_info("Closed span", span);
 }
 
 static PHP_FUNCTION(ddastrace_span_close_by_ref) {
@@ -184,8 +185,9 @@ static PHP_FUNCTION(ddastrace_span_close_by_ref) {
 		return;
 	}
 
-	// TODO Stop the timer
+	ddastrace_span_stack_t *span = ddastrace_close_span();
 	php_printf("Called: ddastrace_span_close_by_ref()\n");
+	_print_span_info("Closed span (by ref)", span);
 
 	RETURN_ZVAL(retval, 0, 0);
 }
@@ -201,8 +203,9 @@ static PHP_FUNCTION(ddastrace_span_close_exception) {
 		Z_PARAM_OBJECT_OF_CLASS(exception, zend_ce_throwable)
 	ZEND_PARSE_PARAMETERS_END();
 
-	// TODO Stop the timer
+	ddastrace_span_stack_t *span = ddastrace_close_span();
 	php_printf("Called: ddastrace_span_close_exception()\n");
+	_print_span_info("Closed span (exception)", span);
 
 	RETURN_ZVAL(exception, 0, 0);
 }

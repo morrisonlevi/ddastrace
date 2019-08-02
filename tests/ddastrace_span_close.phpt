@@ -7,12 +7,20 @@ if (!extension_loaded('ddastrace')) echo 'skip: ddastrace required';
 --FILE--
 <?php
 function foo() {
-    $retval = 'foo';
-    ddastrace_span_close($retval);
-    ddastrace_span_close(42);
+    echo "Foo!\n";
+    return "retfoo\n";
 }
-foo();
+echo foo();
 ?>
---EXPECT--
-Called: ddastrace_span_close(): foo
-Called: ddastrace_span_close()
+--EXPECTF--
+Called: ddastrace_span_open()
+Opened span: #%d
+	parent: #0
+	start: %d (duration: 0)
+
+Foo!
+retfoo
+Called: ddastrace_span_close(): retfoo
+Closed span (void): #%d
+	parent: #0
+	start: %d (duration: %d)
