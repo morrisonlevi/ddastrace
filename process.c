@@ -124,20 +124,18 @@ static zend_ast *_process_return(zend_ast *ast) {
 
 		call = zend_ast_create(ZEND_AST_CALL,
 			_create_ast_str(name, len, ZEND_NAME_FQ),
-			zend_ast_create_list(1, ZEND_AST_ARG_LIST, ast->child[0]));
+			zend_ast_create_list(1, ZEND_AST_ARG_LIST, _process_ast(ast->child[0])));
 
 		ast->child[0] = call;
+		return ast;
 
-		// todo: recurse on the expr_ast
 	} else {
 		// { ddastrace_span_end_void(); return; }
 		zend_ast *call = zend_ast_create(ZEND_AST_CALL,
 			_create_ast_str("ddastrace_span_end_void", sizeof("ddastrace_span_end_void") - 1, ZEND_NAME_FQ),
 			zend_ast_create_list(0, ZEND_AST_ARG_LIST));
-		zend_ast *list = zend_ast_create_list(2, ZEND_AST_STMT_LIST, call, ast);
-		return_ast = list;
+		return zend_ast_create_list(2, ZEND_AST_STMT_LIST, call, ast);
 	}
-	return return_ast;
 }
 
 // inspired by zend_ast_copy
