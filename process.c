@@ -4,7 +4,23 @@ void (*ddastrace_prev_ast_process)(zend_ast *ast);
 
 #define zend_ast_alloc(size) zend_arena_alloc(&CG(ast_arena), size);
 
-// todo: compiler globals for being in a function?
+#if defined(ZTS) && defined(COMPILE_DL_DDASTRACE)
+	ZEND_TSRMLS_CACHE_DEFINE()
+#endif
+
+typedef struct {
+	zend_bool in_func;
+	zend_bool by_ref;
+} _globals_t;
+
+ZEND_TLS _globals_t globals = {0, 0};
+
+static _globals_t _backup_globals(zend_bool in_func, zend_bool by_ref) {
+	_globals_t backup = globals;
+	globals.in_func = in_func;
+	globals.by_ref = by_ref;
+	return backup;
+}
 
 static inline size_t zend_ast_list_size(uint32_t children) {
 	return sizeof(zend_ast_list) - sizeof(zend_ast *) + sizeof(zend_ast *) * children;
@@ -71,6 +87,7 @@ static zend_ast *_process_function(zend_ast *ast) {
 
 	zend_ast *catch = _create_ast_catch(stop_lineno);
 	zend_ast *finally = NULL;
+	_globals_t globals_backup = _backup_globals(1, decl->flags & ZEND_ACC_RETURN_REFERENCE ? 1 : 0);
 	zend_ast *try = zend_ast_create(ZEND_AST_TRY, _process_ast(decl->child[2]), catch, finally);
 	zend_ast_list *new_list = zend_ast_alloc(zend_ast_list_size(3));
 	new_list->kind = ZEND_AST_STMT_LIST;
@@ -85,24 +102,19 @@ static zend_ast *_process_function(zend_ast *ast) {
 
 	decl->child[2] = (zend_ast *) new_list;
 
+	globals = globals_backup;
 	return ast;
 }
 
 static zend_ast *_process_return(zend_ast *ast) {
 	zend_ast *expr_ast = ast->child[0];
 	zend_ast *return_ast = ast;
-	zend_bool by_ref = 0;
-
-#if 0
-	// todo: add active_op_array as we traverse
-	zend_bool by_ref = (CG(active_op_array)->fn_flags & ZEND_ACC_RETURN_REFERENCE) != 0;
 
 	// if there isn't an active function then don't wrap it
 	// e.g. return at file scope
-	if (!CG(active_op_array)->function_name) {
+	if (!globals.in_func) {
 		return return_ast;
 	}
-#endif
 
 	if (expr_ast) {
 		/* Either:
@@ -113,7 +125,7 @@ static zend_ast *_process_return(zend_ast *ast) {
 		char *name;
 		size_t len;
 
-		if (by_ref) {
+		if (globals.by_ref) {
 			name = "ddastrace_span_close_by_ref";
 			len = sizeof("ddastrace_span_close_by_ref") - 1;
 		} else {
@@ -123,7 +135,7 @@ static zend_ast *_process_return(zend_ast *ast) {
 
 		call = zend_ast_create(ZEND_AST_CALL,
 			_create_ast_str(name, len, ZEND_NAME_FQ),
-			zend_ast_create_list(1, ZEND_AST_ARG_LIST, _process_ast(ast->child[0])));
+			zend_ast_create_list(1, ZEND_AST_ARG_LIST, _process_ast(expr_ast)));
 
 		ast->child[0] = call;
 		return ast;

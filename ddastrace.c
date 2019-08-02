@@ -122,7 +122,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_close, 0, 0, 1)
 ZEND_ARG_INFO(0, retval)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_close_by_ref, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_close_by_ref, 0, 1, 1)
 ZEND_ARG_INFO(1, retval_ref)
 ZEND_END_ARG_INFO()
 
@@ -174,17 +174,15 @@ static PHP_FUNCTION(ddastrace_span_close) {
 }
 
 static PHP_FUNCTION(ddastrace_span_close_by_ref) {
-	zval *retval = NULL;
-
 	if (_validate_frame(execute_data) == 0) {
 		return;
 	}
 
 	ZEND_PARSE_PARAMETERS_START_EX(ZEND_PARSE_PARAMS_THROW, 1, 1)
-		Z_PARAM_ZVAL(retval)
+		Z_PARAM_ZVAL(return_value)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if (!Z_ISREF_P(retval)) {
+	if (!Z_ISREF_P(return_value)) {
 		zend_throw_exception_ex(zend_ce_type_error, 0, "Return value must be passed by reference");
 		return;
 	}
@@ -193,7 +191,6 @@ static PHP_FUNCTION(ddastrace_span_close_by_ref) {
 	php_printf("Called: ddastrace_span_close_by_ref()\n");
 	_print_span_info("Closed span (by ref)", span);
 
-	RETURN_ZVAL(retval, 0, 0);
 }
 
 static PHP_FUNCTION(ddastrace_span_close_exception) {
