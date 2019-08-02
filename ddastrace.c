@@ -28,10 +28,6 @@
 #include "span.h"
 #include "inttypes.h"
 
-#if defined(ZTS) && defined(COMPILE_DL_DDASTRACE)
-	ZEND_TSRMLS_CACHE_DEFINE()
-#endif
-
 /* For compatibility with older PHP versions */
 #ifndef ZEND_PARSE_PARAMETERS_NONE
 #define ZEND_PARSE_PARAMETERS_NONE() \

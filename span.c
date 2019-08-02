@@ -6,10 +6,6 @@
 #include "stdint.h"
 #include "php_ddastrace.h"
 
-#if defined(ZTS) && defined(COMPILE_DL_DDASTRACE)
-	ZEND_TSRMLS_CACHE_DEFINE()
-#endif
-
 ZEND_TLS ddastrace_span_stack_t *open_spans_top;
 ZEND_TLS ddastrace_span_stack_t *closed_spans_top;
 
