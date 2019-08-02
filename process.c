@@ -137,6 +137,16 @@ static zend_ast *_process_return(zend_ast *ast) {
 	}
 }
 
+static zend_ast *_process_generic(zend_ast *ast) {
+	uint32_t i, children = zend_ast_get_num_children(ast);
+	for (i = 0; i < children; i++) {
+		if (ast->child[i]) {
+			ast->child[i] = _process_ast(ast->child[i]);
+		}
+	}
+	return ast;
+}
+
 // inspired by zend_ast_copy
 static zend_ast *_process_ast(zend_ast *ast) {
 	if (ast->kind == ZEND_AST_ZVAL || ast->kind == ZEND_AST_CONSTANT) {
@@ -150,7 +160,6 @@ static zend_ast *_process_ast(zend_ast *ast) {
 			}
 		}
 	} else {
-		uint32_t i, children = zend_ast_get_num_children(ast);
 
 		switch (ast->kind) {
 			case ZEND_AST_FUNC_DECL:
@@ -159,11 +168,8 @@ static zend_ast *_process_ast(zend_ast *ast) {
 
 			case ZEND_AST_RETURN:
 				return _process_return(ast);
-		}
-		for (i = 0; i < children; i++) {
-			if (ast->child[i]) {
-				ast->child[i] = _process_ast(ast->child[i]);
-			}
+			default:
+				return _process_generic(ast);
 		}
 	}
 	return ast;
