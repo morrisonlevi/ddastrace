@@ -1,6 +1,6 @@
 # High Level Design
 
-The engine has a `zend_ast_process` hook which is triggered before code compilation. This project uses this hook to perform AST transformations on function and method declarations to insert calls to open and close spans. This proof of concept instruments attempts to instrument all userland functions and methods, though its AST recursion is incomplete.
+The engine has a `zend_ast_process` hook which is triggered before code compilation. This project uses this hook to perform AST transformations on function and method declarations to insert calls to open and close spans. This proof of concept attempts to instrument all userland functions and methods but not closures, though its AST recursion is potentially incomplete.
 
 The transformation are:
 
