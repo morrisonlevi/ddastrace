@@ -108,7 +108,8 @@ static void _print_span_info(char *action, ddastrace_span_stack_t *span)
 
 /* {{{ arginfo
  */
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_open, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_open, 0, 0, 1)
+ZEND_ARG_ARRAY_INFO(0, args, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ddastrace_span_close_void, 0, 0, 0)
@@ -128,13 +129,21 @@ ZEND_END_ARG_INFO()
 /* }}} */
 
 static PHP_FUNCTION(ddastrace_span_open) {
-	ZEND_PARSE_PARAMETERS_NONE();
+	zval *args;
+
+	ZEND_PARSE_PARAMETERS_START_EX(ZEND_PARSE_PARAMS_THROW, 1, 1)
+		Z_PARAM_ARRAY_EX(args, 0, 1)
+	ZEND_PARSE_PARAMETERS_END();
+
 	if (_validate_frame(execute_data) == 0) {
 		return;
 	}
 	ddastrace_span_stack_t *span = ddastrace_open_span();
 	php_printf("Called: ddastrace_span_open()\n");
 	_print_span_info("Opened span", span);
+
+	// todo: attach args to span instead of dtor
+	zval_ptr_dtor(args);
 }
 
 static PHP_FUNCTION(ddastrace_span_close_void) {

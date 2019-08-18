@@ -28,7 +28,7 @@ This extension will convert it into this, minus whitespace differences:
 
 ```php
 function to_iterator(iterable $input): Iterator {
-    ddastrace_span_open();
+    ddastrace_span_open(func_get_args());
     try {
         if (is_array($input))
             return ddastrace_span_close(new ArrayIterator($input));

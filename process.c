@@ -79,7 +79,12 @@ static zend_ast *_process_function(zend_ast *ast) {
 
 	zend_ast *span_open = zend_ast_create(ZEND_AST_CALL,
 		_create_ast_str("ddastrace_span_open", sizeof("ddastrace_span_open") - 1, ZEND_NAME_FQ),
-		zend_ast_create_list(0, ZEND_AST_ARG_LIST));
+		zend_ast_create_list(1, ZEND_AST_ARG_LIST,
+			zend_ast_create(ZEND_AST_CALL,
+				_create_ast_str("func_get_args", sizeof("func_get_args") - 1, ZEND_NAME_FQ),
+				zend_ast_create_list(0, ZEND_AST_ARG_LIST)
+			)
+		));
 
 	zend_ast *span_close = zend_ast_create(ZEND_AST_CALL,
 		_create_ast_str("ddastrace_span_close_void", sizeof("ddastrace_span_close_void") - 1, ZEND_NAME_FQ),
@@ -191,7 +196,7 @@ ZEND_API void ddastrace_ast_process(zend_ast *ast) {
 	/* find function and method declarations
 	 * wrap body in (roughly):
 	 *
-	 * ddastrace_span_open();
+	 * ddastrace_span_open(func_get_args());
 	 * try { ... }
 	 * catch (Throwable $ex) {
 	 *   ddastrace_span_close_exception($ex);
