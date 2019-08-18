@@ -6,6 +6,9 @@ if (!extension_loaded('ddastrace')) echo 'skip: ddastrace required';
 ?>
 --FILE--
 <?php
+
+namespace NS;
+
 function foo() {
     throw new Exception('Oops!', 13);
 }
